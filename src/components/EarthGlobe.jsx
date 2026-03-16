@@ -2,8 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import Globe from 'globe.gl';
 import * as THREE from 'three';
 
-const COUNTRIES_GEOJSON_URL =
-  'https://cdn.jsdelivr.net/npm/three-globe/example/datasets/ne_110m_admin_0_countries.geojson';
+const COUNTRIES_GEOJSON_URL = '/countries.geojson';
 const EARTH_TEXTURE_URL =
   'https://unpkg.com/three-globe/example/img/earth-night.jpg';
 const BUMP_TEXTURE_URL =
@@ -11,9 +10,9 @@ const BUMP_TEXTURE_URL =
 const BACKGROUND_TEXTURE_URL =
   'https://unpkg.com/three-globe/example/img/night-sky.png';
 
-const VISITED_COLOR = 'rgba(109, 224, 255, 0.88)';
-const DEFAULT_COLOR = 'rgba(126, 146, 178, 0.18)';
-const HOVER_COLOR = 'rgba(255, 255, 255, 0.34)';
+const VISITED_COLOR = 'rgba(122, 208, 255, 0.34)';
+const DEFAULT_COLOR = 'rgba(126, 146, 178, 0.10)';
+const HOVER_COLOR = 'rgba(214, 236, 255, 0.22)';
 
 function EarthGlobe({ visitedCountryIds, onCountryClick }) {
   const containerRef = useRef(null);
@@ -34,7 +33,13 @@ function EarthGlobe({ visitedCountryIds, onCountryClick }) {
     let isMounted = true;
 
     fetch(COUNTRIES_GEOJSON_URL)
-      .then((response) => response.json())
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Country polygon request failed: ${response.status}`);
+        }
+
+        return response.json();
+      })
       .then((data) => {
         if (isMounted) {
           setCountries(data.features ?? []);
@@ -211,8 +216,8 @@ function EarthGlobe({ visitedCountryIds, onCountryClick }) {
         }
 
         return visitedCountryIds.has(countryId)
-          ? 'rgba(164, 242, 255, 0.95)'
-          : 'rgba(173, 196, 230, 0.22)';
+          ? 'rgba(141, 220, 255, 0.68)'
+          : 'rgba(173, 196, 230, 0.16)';
       })
       .polygonAltitude((country) => {
         const countryId = getCountryId(country);
@@ -221,7 +226,7 @@ function EarthGlobe({ visitedCountryIds, onCountryClick }) {
           return 0.024;
         }
 
-        return visitedCountryIds.has(countryId) ? 0.018 : 0.008;
+        return visitedCountryIds.has(countryId) ? 0.014 : 0.006;
       })
       .polygonLabel((country) => {
         const name = country?.properties?.ADMIN ?? 'Unknown country';
@@ -231,6 +236,7 @@ function EarthGlobe({ visitedCountryIds, onCountryClick }) {
         return `<div class="globe-tooltip"><strong>${name}</strong><span>${visited}</span></div>`;
       })
       .onPolygonClick((country) => {
+        setHoveredCountryId(getCountryId(country));
         onCountryClick(country);
       })
       .onPolygonHover((country) => {
