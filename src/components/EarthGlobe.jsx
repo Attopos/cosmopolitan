@@ -13,6 +13,9 @@ const BACKGROUND_TEXTURE_URL =
 const VISITED_COLOR = 'rgba(122, 208, 255, 0.34)';
 const DEFAULT_COLOR = 'rgba(126, 146, 178, 0.10)';
 const HOVER_COLOR = 'rgba(214, 236, 255, 0.22)';
+const HOVER_STROKE_COLOR = 'rgba(255, 255, 255, 0.92)';
+const VISITED_STROKE_COLOR = 'rgba(141, 220, 255, 0.68)';
+const DEFAULT_STROKE_COLOR = 'rgba(173, 196, 230, 0.16)';
 
 function EarthGlobe({ visitedCountryIds, onCountryClick }) {
   const containerRef = useRef(null);
@@ -20,14 +23,55 @@ function EarthGlobe({ visitedCountryIds, onCountryClick }) {
   const rendererRef = useRef(null);
   const controlsRef = useRef(null);
   const starFieldRef = useRef(null);
-  const animationFrameRef = useRef(null);
+  const hoveredCountryIdRef = useRef(null);
+  const visitedCountryIdsRef = useRef(visitedCountryIds);
+  const introTimeoutRef = useRef(null);
   const [countries, setCountries] = useState([]);
-  const [hoveredCountryId, setHoveredCountryId] = useState(null);
 
   const getCountryId = (country) =>
     country?.properties?.ISO_A3 ||
     country?.properties?.ADM0_A3 ||
     country?.id;
+
+  const applyPolygonStyles = (globe, activeVisitedCountryIds) => {
+    globe
+      .polygonCapColor((country) => {
+        const countryId = getCountryId(country);
+
+        if (hoveredCountryIdRef.current === countryId) {
+          return HOVER_COLOR;
+        }
+
+        return activeVisitedCountryIds.has(countryId)
+          ? VISITED_COLOR
+          : DEFAULT_COLOR;
+      })
+      .polygonSideColor(() => 'rgba(12, 18, 28, 0.10)')
+      .polygonStrokeColor((country) => {
+        const countryId = getCountryId(country);
+
+        if (hoveredCountryIdRef.current === countryId) {
+          return HOVER_STROKE_COLOR;
+        }
+
+        return activeVisitedCountryIds.has(countryId)
+          ? VISITED_STROKE_COLOR
+          : DEFAULT_STROKE_COLOR;
+      })
+      .polygonAltitude((country) => {
+        const countryId = getCountryId(country);
+
+        if (hoveredCountryIdRef.current === countryId) {
+          return 0.018;
+        }
+
+        return activeVisitedCountryIds.has(countryId) ? 0.012 : 0.004;
+      });
+  };
+
+  useEffect(() => {
+    visitedCountryIdsRef.current = visitedCountryIds;
+  }, [visitedCountryIds]);
 
   useEffect(() => {
     let isMounted = true;
@@ -76,20 +120,21 @@ function EarthGlobe({ visitedCountryIds, onCountryClick }) {
     const camera = globe.camera();
     const controls = globe.controls();
 
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     renderer.setClearColor(0x000000, 1);
 
-    camera.position.set(0, 40, 265);
+    camera.position.set(-28, 52, 300);
     camera.lookAt(0, 0, 0);
+    globe.pointOfView({ lat: 24, lng: -30, altitude: 2.55 }, 0);
 
     controls.autoRotate = true;
-    controls.autoRotateSpeed = 0.35;
+    controls.autoRotateSpeed = 0.24;
     controls.enablePan = false;
     controls.enableDamping = true;
-    controls.dampingFactor = 0.08;
+    controls.dampingFactor = 0.06;
     controls.minDistance = 180;
     controls.maxDistance = 360;
-    controls.rotateSpeed = 0.8;
+    controls.rotateSpeed = 0.72;
     controls.zoomSpeed = 0.9;
 
     const ambientLight = new THREE.AmbientLight(0xbcd7ff, 0.7);
@@ -99,7 +144,7 @@ function EarthGlobe({ visitedCountryIds, onCountryClick }) {
     scene.add(directionalLight);
 
     const starGeometry = new THREE.BufferGeometry();
-    const starCount = 2500;
+    const starCount = 1400;
     const starPositions = new Float32Array(starCount * 3);
 
     for (let i = 0; i < starCount; i += 1) {
@@ -120,10 +165,10 @@ function EarthGlobe({ visitedCountryIds, onCountryClick }) {
 
     const starMaterial = new THREE.PointsMaterial({
       color: 0xffffff,
-      size: 2.2,
+      size: 1.6,
       sizeAttenuation: true,
       transparent: true,
-      opacity: 0.9
+      opacity: 0.82
     });
 
     const starField = new THREE.Points(starGeometry, starMaterial);
@@ -150,34 +195,29 @@ function EarthGlobe({ visitedCountryIds, onCountryClick }) {
 
     const handlePointerLeave = () => {
       controls.autoRotate = true;
-      setHoveredCountryId(null);
+      hoveredCountryIdRef.current = null;
+      applyPolygonStyles(globe, visitedCountryIdsRef.current);
 
       if (containerRef.current) {
         containerRef.current.style.cursor = 'grab';
       }
     };
 
-    const animate = () => {
-      if (starFieldRef.current) {
-        starFieldRef.current.rotation.y += 0.00035;
-      }
-
-      animationFrameRef.current = window.requestAnimationFrame(animate);
-    };
-
     window.addEventListener('resize', handleResize);
     container.addEventListener('pointerenter', handlePointerEnter);
     container.addEventListener('pointerleave', handlePointerLeave);
     handleResize();
-    animate();
+    introTimeoutRef.current = window.setTimeout(() => {
+      globe.pointOfView({ lat: 18, lng: -12, altitude: 1.9 }, 1800);
+    }, 160);
 
     return () => {
       window.removeEventListener('resize', handleResize);
       container.removeEventListener('pointerenter', handlePointerEnter);
       container.removeEventListener('pointerleave', handlePointerLeave);
 
-      if (animationFrameRef.current) {
-        window.cancelAnimationFrame(animationFrameRef.current);
+      if (introTimeoutRef.current) {
+        window.clearTimeout(introTimeoutRef.current);
       }
 
       if (starFieldRef.current) {
@@ -214,37 +254,6 @@ function EarthGlobe({ visitedCountryIds, onCountryClick }) {
 
     globe
       .polygonsData(countries)
-      .polygonCapColor((country) => {
-        const countryId =
-          getCountryId(country);
-
-        if (hoveredCountryId === countryId) {
-          return HOVER_COLOR;
-        }
-
-        return visitedCountryIds.has(countryId) ? VISITED_COLOR : DEFAULT_COLOR;
-      })
-      .polygonSideColor(() => 'rgba(12, 18, 28, 0.10)')
-      .polygonStrokeColor((country) => {
-        const countryId = getCountryId(country);
-
-        if (hoveredCountryId === countryId) {
-          return 'rgba(255, 255, 255, 0.92)';
-        }
-
-        return visitedCountryIds.has(countryId)
-          ? 'rgba(141, 220, 255, 0.68)'
-          : 'rgba(173, 196, 230, 0.16)';
-      })
-      .polygonAltitude((country) => {
-        const countryId = getCountryId(country);
-
-        if (hoveredCountryId === countryId) {
-          return 0.024;
-        }
-
-        return visitedCountryIds.has(countryId) ? 0.014 : 0.006;
-      })
       .polygonLabel((country) => {
         const name = country?.properties?.ADMIN ?? 'Unknown country';
         const countryId = getCountryId(country);
@@ -253,15 +262,27 @@ function EarthGlobe({ visitedCountryIds, onCountryClick }) {
         return `<div class="globe-tooltip"><strong>${name}</strong><span>${visited}</span></div>`;
       })
       .onPolygonClick((country) => {
-        setHoveredCountryId(getCountryId(country));
+        hoveredCountryIdRef.current = getCountryId(country);
         onCountryClick(country);
       })
       .onPolygonHover((country) => {
-        setHoveredCountryId(getCountryId(country));
-        containerRef.current.style.cursor = country ? 'pointer' : 'grab';
+        const nextHoveredCountryId = getCountryId(country);
+
+        if (hoveredCountryIdRef.current === nextHoveredCountryId) {
+          return;
+        }
+
+        hoveredCountryIdRef.current = nextHoveredCountryId;
+        applyPolygonStyles(globe, visitedCountryIds);
+
+        if (containerRef.current) {
+          containerRef.current.style.cursor = country ? 'pointer' : 'grab';
+        }
       })
-      .polygonsTransitionDuration(220);
-  }, [countries, hoveredCountryId, onCountryClick, visitedCountryIds]);
+      .polygonsTransitionDuration(380);
+
+    applyPolygonStyles(globe, visitedCountryIds);
+  }, [countries, onCountryClick, visitedCountryIds]);
 
   return (
     <section className="globe-section">
