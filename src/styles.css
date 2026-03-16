@@ -1,0 +1,119 @@
+:root {
+  color: #f4f7fb;
+  background:
+    radial-gradient(circle at top, rgba(26, 55, 91, 0.35), transparent 34%),
+    radial-gradient(circle at 20% 20%, rgba(60, 98, 150, 0.16), transparent 24%),
+    linear-gradient(180deg, #04070d 0%, #020305 55%, #000000 100%);
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+  width: 100%;
+}
+
+body {
+  overflow: hidden;
+}
+
+.app-shell {
+  min-height: 100vh;
+}
+
+.globe-section {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  background:
+    radial-gradient(circle at 50% 20%, rgba(63, 114, 184, 0.08), transparent 28%),
+    linear-gradient(180deg, rgba(2, 5, 11, 0.45), rgba(0, 0, 0, 0.82));
+}
+
+.globe-canvas {
+  height: 100vh;
+  width: 100%;
+  cursor: grab;
+}
+
+.globe-canvas:active {
+  cursor: grabbing;
+}
+
+.globe-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  max-width: 30rem;
+  padding: 3rem 1.5rem 2rem;
+  pointer-events: none;
+}
+
+.globe-kicker {
+  margin: 0 0 0.9rem;
+  color: rgba(173, 219, 255, 0.78);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.36em;
+  text-transform: uppercase;
+}
+
+.globe-overlay h1 {
+  margin: 0;
+  font-size: clamp(2.8rem, 6vw, 5.4rem);
+  font-weight: 500;
+  letter-spacing: -0.05em;
+  line-height: 0.95;
+}
+
+.globe-copy {
+  margin: 1rem 0 0;
+  max-width: 24rem;
+  color: rgba(225, 233, 246, 0.78);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.globe-tooltip {
+  display: grid;
+  gap: 0.3rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid rgba(169, 204, 240, 0.25);
+  border-radius: 0.75rem;
+  background: rgba(5, 8, 14, 0.92);
+  color: #eef6ff;
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  font-size: 0.82rem;
+  backdrop-filter: blur(8px);
+}
+
+.globe-tooltip strong {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.globe-tooltip span {
+  color: rgba(181, 212, 245, 0.84);
+}
+
+@media (max-width: 720px) {
+  .globe-overlay {
+    max-width: 18rem;
+    padding-top: 1.5rem;
+  }
+
+  .globe-overlay h1 {
+    font-size: clamp(2.3rem, 12vw, 3.5rem);
+  }
+
+  .globe-copy {
+    font-size: 0.95rem;
+  }
+}
