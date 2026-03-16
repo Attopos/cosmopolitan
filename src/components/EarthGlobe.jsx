@@ -144,6 +144,19 @@ function EarthGlobe({ visitedCountryIds, onCountryClick }) {
         .height(containerRef.current.clientHeight);
     };
 
+    const handlePointerEnter = () => {
+      controls.autoRotate = false;
+    };
+
+    const handlePointerLeave = () => {
+      controls.autoRotate = true;
+      setHoveredCountryId(null);
+
+      if (containerRef.current) {
+        containerRef.current.style.cursor = 'grab';
+      }
+    };
+
     const animate = () => {
       if (starFieldRef.current) {
         starFieldRef.current.rotation.y += 0.00035;
@@ -153,11 +166,15 @@ function EarthGlobe({ visitedCountryIds, onCountryClick }) {
     };
 
     window.addEventListener('resize', handleResize);
+    container.addEventListener('pointerenter', handlePointerEnter);
+    container.addEventListener('pointerleave', handlePointerLeave);
     handleResize();
     animate();
 
     return () => {
       window.removeEventListener('resize', handleResize);
+      container.removeEventListener('pointerenter', handlePointerEnter);
+      container.removeEventListener('pointerleave', handlePointerLeave);
 
       if (animationFrameRef.current) {
         window.cancelAnimationFrame(animationFrameRef.current);
